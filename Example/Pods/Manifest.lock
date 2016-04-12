@@ -1,0 +1,14 @@
+PODS:
+  - iTextField (0.1.0)
+
+DEPENDENCIES:
+  - iTextField (from `../`)
+
+EXTERNAL SOURCES:
+  iTextField:
+    :path: ../
+
+SPEC CHECKSUMS:
+  iTextField: a58aacdd430278c0965571575847d51fa55b1f34
+
+COCOAPODS: 0.39.0
