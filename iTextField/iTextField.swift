@@ -114,6 +114,120 @@ Steps To use Delegate
 
 }
 
+extension String
+{
+
+
+
+    
+  // Extension of String to have ablity to test the extered text has valid email or not (based on regular expressions
+    func isValidEmail() -> Bool
+    {
+        
+        // Regular expression
+        let regex = try! NSRegularExpression(pattern: "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,4}$",
+                                             options: [.CaseInsensitive])
+        
+    
+        return regex.firstMatchInString(self, options:[],
+                                        range: NSMakeRange(0, self.characters.count)) != nil
+        
+        
+    }
+    
+    
+    
+    // Method to get Age and year as a tuple from this method that gets Date as a string in it.
+    func getAgeAndYearFromDateInString() -> (String,Int)
+    {
+        
+        
+        
+        // Initilize a calendar that is used to first get a year , month and day
+        
+        let calender = NSCalendar.currentCalendar()
+        let df = NSDateFormatter()
+        df.dateFormat = "dd/MM/yyyy"
+        
+        
+        // Test the string has valid date then procceds else return a default value
+        if var birthDate  = df.dateFromString(self)
+        {
+            
+            // Current Date
+            let currentDate = NSDate()
+            
+            // Find Diffrence in years from current and Date in string
+            let yearComponent = calender.components(NSCalendarUnit.Year, fromDate: birthDate, toDate: currentDate, options: NSCalendarOptions.init(rawValue: 0))
+            
+            // Add Year to find months from the existing Date
+            let addYearInBirth:NSDateComponents = NSDateComponents()
+            addYearInBirth.year  = yearComponent.year
+            
+            
+            // Modified Date
+            birthDate = calender.dateByAddingComponents(addYearInBirth, toDate: birthDate, options: NSCalendarOptions.init(rawValue: 0))!
+            
+            // Getting Month from Date
+            let monthComponents = calender.components(NSCalendarUnit.Month, fromDate: birthDate, toDate: currentDate, options: NSCalendarOptions.init(rawValue: 0))
+            
+            
+            // Find the diffrence if it is 12 then add one year else number of months
+            let yearToAddIftweleweMonth:Int  =  monthComponents.month == 12 ? 1 :0
+            monthComponents.year = yearToAddIftweleweMonth
+            
+            
+            
+            birthDate  = calender.dateByAddingComponents(monthComponents, toDate: birthDate, options: NSCalendarOptions.init(rawValue: 0))!
+            
+            
+            // Getting Days
+            let dayComponent = calender.components(NSCalendarUnit.Day, fromDate: birthDate, toDate: currentDate, options: .MatchFirst)
+            
+            
+                //   Settiing the Final Version 
+            
+            var finalDate = ""
+            if yearComponent.year != 0
+            {
+                finalDate += "\(yearComponent.year)Y"
+                
+            }
+            if monthComponents.month != 0
+            {
+                finalDate += " \(monthComponents.month)M"
+                
+            }
+            if dayComponent.day != 0
+            {
+                finalDate += " \(dayComponent.day)D"
+                
+            }
+            
+            let finalAge = yearComponent.year
+            return (finalDate,finalAge)
+            
+        }
+        
+        return ("",-1)
+        
+    }
+    // Test whether the text is valid for the set strong password having atleast one small, atleast one capital ,atleast one number and atleast one special characters
+    
+    func isValidPassword() -> Bool
+    {
+        
+        let cs:NSCharacterSet = NSCharacterSet(charactersInString:"$%&@_-#!")
+        let decimalCharacters = NSCharacterSet.decimalDigitCharacterSet()
+        
+        return (self.rangeOfCharacterFromSet(decimalCharacters) != nil) && (self.rangeOfCharacterFromSet(NSCharacterSet.lowercaseLetterCharacterSet()) != nil) && (self.rangeOfCharacterFromSet(cs) != nil) && (self.rangeOfCharacterFromSet(NSCharacterSet.uppercaseLetterCharacterSet()) != nil)
+        
+        
+        
+        
+    }
+
+}
 
 
 public class iTextField: UITextField ,UITextFieldDelegate{
@@ -127,9 +241,14 @@ public class iTextField: UITextField ,UITextFieldDelegate{
     This String can be used to instruct the users to what to fill in text field
     
     */
-    var initialPlaceholderText:String?
+        var initialPlaceholderText:String?
     
     
+    /*
+     
+     The String That is shown just after the the user start typing and   This String can be used to instruct the users to what to fill and accpetable Values in textfiels
+     
+     */
     
         var typingPlaceholderText:String?
     
@@ -142,12 +261,25 @@ public class iTextField: UITextField ,UITextFieldDelegate{
     var warningPlaceholderText:String?
   
     
+    // Complettion Text that is shown on the left side when text entered by the user is valid on Constraints
     
     var completionPlaceholderText:String?
-     var sideLabel:UILabel?
+    
+    
+    // side Label to Show
+       var sideLabel:UILabel?
+    
+    //under progress label
+     private var underProgressLabel:UILabel?
+    
+    // park button or autocomplete button
      var parkLabel:UIButton?
-     var underProgressLabel:UILabel?
+    
+    
+    // Array to store User suggestions
      var userSuggestions:[String]?
+    
+    //
      var minimumAge:Int?
      var MaximumAge:Int?
      var intialColor:UIColor?
@@ -207,11 +339,6 @@ public class iTextField: UITextField ,UITextFieldDelegate{
     
     
     
-    
-    
-    
-    
-    
     // Only override drawRect: if you perform custom drawing.
     // An empty implementation adversely affects performance during animation.
     override public func drawRect(rect: CGRect) {
@@ -230,6 +357,11 @@ public class iTextField: UITextField ,UITextFieldDelegate{
     
     }
     
+    
+// MARK:  Initilizers
+    
+    
+    // Following methods initlize on the way of use
     public func initilizeiTextFieldWithEmailHavingDefaultSettings()
     {
    
@@ -279,7 +411,7 @@ public class iTextField: UITextField ,UITextFieldDelegate{
     
     
     
-    func intitlizeiTextFieldWithTypeUserDefinedMustAddDelegateWithAllowedCharacterRangeFrom(min:Int ,to max:Int ,andSuggestionArray suggestion:[String] )
+    public  func intitlizeiTextFieldWithTypeUserDefinedMustAddDelegateWithAllowedCharacterRangeFrom(min:Int ,to max:Int ,andSuggestionArray suggestion:[String] )
     {
         self.initilizeNormalSupportAutoComple(true)
         self.type = iTextFieldType.UserDefined
@@ -289,38 +421,41 @@ public class iTextField: UITextField ,UITextFieldDelegate{
         self.keyboardType = .Default
         self.iTextFieldSetIntialPlaceholderText("User defined", withtypingPlaceholderText: "Typing....", withWarningPlaceholder: "N/A", andCompletionPlaceholer: "😊")
     }
-   
+ 
     
-    
-    
-    
-    
-    
+    // Default Setup of TextField
     private func initilizeNormalSupportAutoComple(value:Bool)
     {
     
+        
+        self.secureTextEntry = false
+        
         self.type =                        .Normal
         self.initialPlaceholderText     = ""
         self.typingPlaceholderText      = ""
         self.warningPlaceholderText     = ""
         self.completionPlaceholderText  = ""
+        
         self.textAlignment              = NSTextAlignment.Center
+        
         self.contentOffset              = 2
         self.intialColor                = self.textColor
         self.delegate                   = self
         self.willShowAge                = true
         
         
-        
-        NSNotificationCenter.defaultCenter().addObserver(self, selector:"tfTextDidChange", name: UITextFieldTextDidChangeNotification, object: self)
-        NSNotificationCenter.defaultCenter().addObserver(self, selector:"CheckValidityOfText",name: UITextFieldTextDidEndEditingNotification, object: self)
-        NSNotificationCenter.defaultCenter().addObserver(self, selector:"tfStartTyping", name: UITextFieldTextDidBeginEditingNotification, object: self)
+        //Adding observer for the the textfield operions
+        NSNotificationCenter.defaultCenter().addObserver(self, selector:#selector(iTextField.tfTextDidChange), name: UITextFieldTextDidChangeNotification, object: self)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector:#selector(iTextField.CheckValidityOfText),name: UITextFieldTextDidEndEditingNotification, object: self)
+        NSNotificationCenter.defaultCenter().addObserver(self, selector:#selector(iTextField.tfStartTyping), name: UITextFieldTextDidBeginEditingNotification, object: self)
     
         
         
-        
+        if self.sideLabel == nil
+        {
         
         self.sideLabel                  = UILabel(frame: self.borderRectForBounds(self.bounds))
+        }
         self.sideLabel?.textColor                  = UIColor.lightGrayColor()
         self.addSubview(self.sideLabel!)
         
@@ -328,7 +463,7 @@ public class iTextField: UITextField ,UITextFieldDelegate{
         {
         self.parkLabel                  = UIButton(frame: CGRectZero)
         self.parkLabel?.titleLabel!.font = self.font
-        self.parkLabel?.addTarget(self, action: "autoCompleteText", forControlEvents: UIControlEvents.TouchUpInside)
+        self.parkLabel?.addTarget(self, action: #selector(iTextField.autoCompleteText), forControlEvents: UIControlEvents.TouchUpInside)
         self.parkLabel?.titleLabel!.textColor                  = UIColor.lightGrayColor()
         self.parkLabel?.setTitleColor(.lightGrayColor(), forState: .Normal)
         self.parkLabel?.contentHorizontalAlignment = UIControlContentHorizontalAlignment.Left
@@ -358,9 +493,9 @@ public class iTextField: UITextField ,UITextFieldDelegate{
     
 
     
-     // Mark: iTextField Start Typing
+     // MARK: iTextField Start Typing
     
-    
+    // Initilial method that setup the view for when Textfield become first responder, setup
     func tfStartTyping()
     {
         
@@ -399,25 +534,19 @@ public class iTextField: UITextField ,UITextFieldDelegate{
                 
             }
             }, completion: nil)
-        
-        
-        
-        
-        
-        
-        
+
         
     }
     
+    
+    
+//MARK: Uer Typing in TextField
      func tfTextDidChange()
     
     {
-    
-        
-        
         
         self.parkLabel?.titleLabel!.textAlignment = .Left
-       // self.parkLabel?.backgroundColor = UIColor.blackColor()
+
         UIView.animateWithDuration(0.2, delay: 0.0, usingSpringWithDamping: 0.9, initialSpringVelocity: 0, options: .CurveLinear, animations: { () -> Void in
             
             
@@ -500,10 +629,15 @@ public class iTextField: UITextField ,UITextFieldDelegate{
                         if !self.text!.isEmpty {
                     
                     self.bringSubviewToFront(self.parkLabel!)
-                    self.text! = (self.delegateOfiTextField?.valueOfUnderProgrssBarWhileTypingWithText(self.text!).1)!
-                    self.parkLabel?.titleLabel!.text = self.autoCompleteTextForiTextFieldOfType(.UserDefined, withTextForAutoCompletion: self.text!)
+                    let autoCompletetext = self.autoCompleteTextForiTextFieldOfType( .UserDefined, withTextForAutoCompletion: self.text!)
+                            
+                    self.parkLabel?.titleLabel!.text =  autoCompletetext
+                    self.parkLabel?.setTitle(autoCompletetext, forState: .Normal)
+
+                   
                     self.parkLabel?.frame = self.getRectForAutoCompleteLabelWithText((self.parkLabel?.titleLabel!.text!)!)
-                    
+//                    self.parkLabel?.backgroundColor = UIColor.blueColor()
+//                    self.parkLabel?.titleLabel?.textColor = UIColor.blackColor()
                 }
                 else
                 {
@@ -532,7 +666,7 @@ public class iTextField: UITextField ,UITextFieldDelegate{
     
     
     }
-    
+// MARK: Check Validity When user Ended Typing
     func CheckValidityOfText()
     {
         
@@ -542,7 +676,8 @@ public class iTextField: UITextField ,UITextFieldDelegate{
         {
             
         case .Email:
-            if self.isValidEmail(self.text!)    {
+            if(self.text!.isValidEmail())
+             {
                 
                 self.showCompletionOnsideLabelWithText(self.completionPlaceholderText!)
                 
@@ -558,7 +693,7 @@ public class iTextField: UITextField ,UITextFieldDelegate{
             {
                 
                 
-                self.showCompletionOnsideLabelWithText(self.willShowAge ? self.getAgeAndYearFromDateInString(self.text!).0 : self.completionPlaceholderText!)
+                self.showCompletionOnsideLabelWithText(self.willShowAge ? self.text!.getAgeAndYearFromDateInString().0 : self.completionPlaceholderText!)
            }
                 
             else
@@ -593,7 +728,7 @@ public class iTextField: UITextField ,UITextFieldDelegate{
             
         case .StrictPassword:
             
-            if self.text?.characters.count > self.minimumCharacterRequired && self.text?.characters.count < self.maximumCharacterAllowed && self.isValidPassword(text!)
+            if self.text?.characters.count > self.minimumCharacterRequired && self.text?.characters.count < self.maximumCharacterAllowed && self.text!.isValidPassword()
             {
                 
                 self.showCompletionOnsideLabelWithText(self.completionPlaceholderText!)
@@ -607,9 +742,14 @@ public class iTextField: UITextField ,UITextFieldDelegate{
             }
             
         case .UserDefined:
-            if ((delegateOfiTextField?.isValidOnCondition(self.text!)) != nil)
+            
+            
+            assert(delegateOfiTextField != nil, "itextField.delegateOfiTextField must define")
+            
+            if (delegateOfiTextField!.isValidOnCondition(self.text!))
             {
                 
+            
                 self.showCompletionOnsideLabelWithText(self.completionPlaceholderText!)
                 
             }
@@ -626,7 +766,7 @@ public class iTextField: UITextField ,UITextFieldDelegate{
         }
    }
 
-
+//MARK: Delegate Method to prevent Typing to have limit users to type within limit of characters
   
     public func textField(textField: UITextField, shouldChangeCharactersInRange range: NSRange, replacementString string: String) -> Bool {
         
@@ -646,27 +786,21 @@ public class iTextField: UITextField ,UITextFieldDelegate{
         
         
     }
+
     
     
-      private func showWarningLabelOnSideLabel()
-    {
-    
-    
-        self.textColor = UIColor.redColor()
-        self.sideLabel?.text = self.warningPlaceholderText
-        self.layer.borderColor = UIColor.redColor().CGColor
-        self.adjustSideLabelWidthWithText((self.sideLabel?.text!)!)
-        self.underProgressLabel?.backgroundColor = UIColor.redColor()
-    
-    
-    
-    }
+
+    // Method that uses diffrent dictionaries and implement the autocomplete feature
     
     private func autoCompleteTextForiTextFieldOfType(type:iTextFieldType , withTextForAutoCompletion text:String ) -> String
     {
     
-        
-        var componentsString = text.componentsSeparatedByString(",")
+            /*
+                    IT CHECKS THE LAST COMPONENET OF THE TEXT ENTERED IN THE iTEXTFIELD SO THAT  WE CAN TEST THAT STRING TO AVAIL AUTOCOMPLETE FUNCTIONALITY
+         
+ 
+            */
+        var componentsString = text.componentsSeparatedByString(" ")
         
         if(type == .Email)
         {
@@ -678,70 +812,76 @@ public class iTextField: UITextField ,UITextFieldDelegate{
         
         var stringToLookFor:String = (componentsString.last?.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceAndNewlineCharacterSet()))!
         
-       
-        
         var AutoCompleteArray = [String]()
+        
+        // TEST FOR TYPE OF CONTENT NEEDED
         switch(type)
         {
         
         
-        case .Email:
+            case .Email:
             
-            AutoCompleteArray = self.emailArray
+            
+                    // TEST FOR PRESENCE OF '@'
+                AutoCompleteArray = self.emailArray
          
-                if(!text.containsString("@"))
-                {
-                 
-                return ""
-                
-                
-                }
-                else if(stringToLookFor.isEmpty)
-                {
-            
-                    return AutoCompleteArray[0]
-                }
-            
-            
-                case .DateOfBirth:
-                    
-                    AutoCompleteArray = self.dateAutoCompletArray
-            
-            if(self.textCharacterCount < self.text!.characters.count)
-            {
-            
-                self.addSlashInDateField(self.text!)
-            }
-                    
-                    
-            stringToLookFor = self.text!
-        
-            if self.text!.characters.count > 3
-            {
-               let index: String.Index = stringToLookFor.endIndex.advancedBy(-2)
-                stringToLookFor = stringToLookFor.substringFromIndex(index)
-            
-            
-            }
-            if self.text!.characters.count > 5
+                    if(!text.containsString("@"))
                     {
+                    
+                            return ""
+                
+                
+                    }
+                    else if(stringToLookFor.isEmpty)
+                    {
+                    
+                        return AutoCompleteArray[0]
+                    }
+            
+            
+            case .DateOfBirth:
+                    
+            
+                // TEST FOR DATE IN TEXT
+                AutoCompleteArray = self.dateAutoCompletArray
+            
+                if(self.textCharacterCount < self.text!.characters.count)
+                {
+            
+                    self.addSlashInDateField(self.text!)
+                }
+                    
+                    
+                stringToLookFor = self.text!
+                
+                if self.text!.characters.count > 3
+                {
+                    let index: String.Index = stringToLookFor.endIndex.advancedBy(-2)
+                    stringToLookFor = stringToLookFor.substringFromIndex(index)
+            
+            
+                }
+                if self.text!.characters.count > 5
+                {
                         let index: String.Index = self.text!.endIndex.advancedBy(-4)
                         stringToLookFor = self.text!.substringFromIndex(index)
                         
                         
-                    }
-            self.textCharacterCount = self.text!.characters.count
-            break
+                }
+                self.textCharacterCount = self.text!.characters.count
+                break
+    
         case .UserDefined:
+        
             AutoCompleteArray = self.userSuggestions ?? ["nothing is here"]
             
             
         default:
-            return ""
+                return ""
             
-        }
+    }
         
-        
+        // CHCECK FOR TEXT HAVING PREFIX THEN RETUEN THAT TEXT ELSE EMPTY STRING IS RETURNED
        for tempString in AutoCompleteArray
         {
         
@@ -755,35 +895,18 @@ public class iTextField: UITextField ,UITextFieldDelegate{
         }
        
         
-      
-        
         return ""
     
     }
-    private func addSlashInDateField(date:String)
+    private func getRectForAutoCompleteLabelWithText(text:String) -> CGRect
     {
         
-    
-        if(date.characters.count == 2 || date.characters.count == 5)
-        {
-        
-            self.text!  = date + "/"
-        
-        
-        }
-    
-   
-    }
-    
-    func getRectForAutoCompleteLabelWithText(text:String) -> CGRect
-    {
-    
         var returnRect = CGRectZero
         if(text.isEmpty)
         {
-        return returnRect
+            return returnRect
         }
-    
+        
         let lineBrakingMode =  NSLineBreakMode.ByCharWrapping
         let paragragh:NSMutableParagraphStyle = NSMutableParagraphStyle()
         paragragh.lineBreakMode = lineBrakingMode
@@ -796,19 +919,38 @@ public class iTextField: UITextField ,UITextFieldDelegate{
         
         returnRect  = CGRectMake(rect.origin.x + textSize.width + 1, rect.origin.y  , placeholderTextSize.width + 25 , rect.size.height)
         
-      
-       
-    return returnRect
+        
+        
+        return returnRect
+        
+        
+        
+    }
+// MARK: Customize the Text Inside TextField
+    private func addSlashInDateField(date:String)
+    {
+        
+        // If User Enteered two digits it automatically add '/' to easy the user to type
+        // It enters slash after day and month are added
+        
+        
+        if(date.characters.count == 2 || date.characters.count == 5)
+        {
+        
+            self.text!  = date + "/"
+        
+        
+        }
     
-    
-    
+   
     }
     
-
+    // Test Valdity of the date inside iTextField
+    
     func isValidDate(date:String) -> Bool
     {
     
-        let rTuple = self.getAgeAndYearFromDateInString(date)
+        let rTuple = date.getAgeAndYearFromDateInString()
         
         let df:NSDateFormatter = NSDateFormatter()
         df.dateFormat = self.dateFormat
@@ -821,153 +963,28 @@ public class iTextField: UITextField ,UITextFieldDelegate{
     return false
     }
     
-    func isValidEmail(email:String) -> Bool
-    {
     
-        
-        let regex = try! NSRegularExpression(pattern: "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,4}$",
-            options: [.CaseInsensitive])
-        
-        return regex.firstMatchInString(email, options:[],
-            range: NSMakeRange(0, email.characters.count)) != nil
-    
-    
-    }
-    func getAgeAndYearFromDateInString(date:String) -> (String,Int)
-    {
-    
-       
-      
-        
-    let calender = NSCalendar.currentCalendar()
-        
-        self.df.dateFormat = self.dateFormat
-        
-       
-        
-       if var birthDate  = self.df.dateFromString(date)
-       {
-        let currentDate = NSDate()
-        
-
-        let yearComponent = calender.components(NSCalendarUnit.Year, fromDate: birthDate, toDate: currentDate, options: NSCalendarOptions.init(rawValue: 0))
-
-        let addYearInBirth:NSDateComponents = NSDateComponents()
-        addYearInBirth.year  = yearComponent.year
-        
-        birthDate = calender.dateByAddingComponents(addYearInBirth, toDate: birthDate, options: NSCalendarOptions.init(rawValue: 0))!
-
-        
-        let monthComponents = calender.components(NSCalendarUnit.Month, fromDate: birthDate, toDate: currentDate, options: NSCalendarOptions.init(rawValue: 0))
-        
-        let yearToAddIftweleweMonth:Int  =  monthComponents.month == 12 ? 1 :0
-        monthComponents.year = yearToAddIftweleweMonth
-        
-        
-        
-         birthDate  = calender.dateByAddingComponents(monthComponents, toDate: birthDate, options: NSCalendarOptions.init(rawValue: 0))!
-        
-
-        
-       let dayComponent = calender.components(NSCalendarUnit.Day, fromDate: birthDate, toDate: currentDate, options: .MatchFirst)
-        
-       
-    
-        var finalDate = ""
-       if yearComponent.year != 0
-       {
-            finalDate += "\(yearComponent.year)Y"
-       
-        }
-        if monthComponents.month != 0
-        {
-            finalDate += " \(monthComponents.month)M"
-            
-        }
-        if dayComponent.day != 0
-        {
-            finalDate += " \(dayComponent.day)D"
-            
-        }
-        
-        
-     //  let finalDate = "\(yearComponent.year)Y \(monthComponents.month)M \(dayComponent.day)"
-        let finalAge = yearComponent.year
-        return (finalDate,finalAge)
-        
-        }
-        
-        
-        
-        
-        return ("",-1)
-
-    
-    
-    
-    
-    }
-    func autoCompleteText()
-    {
-    
-        self.text! += (self.parkLabel?.titleLabel?.text)!
-        self.parkLabel?.frame = CGRectZero
-        self.CheckValidityOfText()
-    
-    }
-    
-    func showCompletionOnsideLabelWithText(text:String)
-    {
-    
-        self.textColor = self.intialColor
-        self.sideLabel?.text = text
-        self.adjustSideLabelWidthWithText((self.sideLabel?.text)!)
-        self.layer.borderColor = self.intialColor?.CGColor
-        
-            self.underProgressLabel?.backgroundColor = UIColor.clearColor()
-    
-    
-    }
-    
-    
-    func isValidPassword(text:String) -> Bool
-    {
-        
-                let cs:NSCharacterSet = NSCharacterSet(charactersInString:"$%&@_-#!")
-        let decimalCharacters = NSCharacterSet.decimalDigitCharacterSet()
-       
-        return (text.rangeOfCharacterFromSet(decimalCharacters) != nil) && (text.rangeOfCharacterFromSet(NSCharacterSet.lowercaseLetterCharacterSet()) != nil) && (text.rangeOfCharacterFromSet(cs) != nil) && (text.rangeOfCharacterFromSet(NSCharacterSet.uppercaseLetterCharacterSet()) != nil)
-    
-    
-        
-
-    }
-    
-    
+    // Check the Password strength on the based of Text entered in the textfield for Strict user password checking
     func checkPasswordStrength(text:String) -> PasswordStrengthType
     {
-       
-        
-        
-        
         let cs:NSCharacterSet = NSCharacterSet(charactersInString:"$ % & @ _ - # !")
         let decimalCharacters = NSCharacterSet.decimalDigitCharacterSet()
         let length = text.characters.count
         var strength = 0
         if(length == 0)
         {
-         return .Weak
-        
+            return .Weak
+            
         }
         else if(length > 7 )
         {
-        strength += 2
-        
+            strength += 2
+            
         }
         else if(length > 5)
         {
-        strength++
-        
+            strength += 1
+            
         }
         
         
@@ -978,49 +995,81 @@ public class iTextField: UITextField ,UITextFieldDelegate{
         
         if strength < 3
         {
-        return .Weak
+            return .Weak
         }
         else if strength < 6
         {return .Moderate
         }
         else {
             
-          return .Strong
+            return .Strong
         }
+        
+    }
+    
+    
+    // MARK: Placeholder Text Setup
+    
+    // It Setup side view To red to show that the data entered in the textfield is not valid on constraints
+    private func showWarningLabelOnSideLabel()
+    {
+        
+        
+        self.textColor = UIColor.redColor()
+        self.sideLabel?.text = self.warningPlaceholderText
+        self.layer.borderColor = UIColor.redColor().CGColor
+        self.adjustSideLabelWidthWithText((self.sideLabel?.text!)!)
+        self.underProgressLabel?.backgroundColor = UIColor.redColor()
+        
+        
+        
+    }
+    
+    // Completion Text : The Setup of side view when the text is valid on constraints
+    func showCompletionOnsideLabelWithText(text:String)
+    {
+        
+        self.textColor = self.intialColor
+        self.sideLabel?.text = text
+        self.adjustSideLabelWidthWithText((self.sideLabel?.text)!)
+        self.layer.borderColor = self.intialColor?.CGColor
+        
+        self.underProgressLabel?.backgroundColor = UIColor.clearColor()
+        
+        
+    }
+    
+   //   method that AutoComplete the remaining text to be filled by the User.
+    func autoCompleteText()
+    {
+    
+        self.text! += (self.parkLabel?.titleLabel?.text)!
+        self.parkLabel?.frame = CGRectZero
+        self.CheckValidityOfText()
     
     }
+    
+ 
+    //MARK: Adjust Side Label Width
     
     
     private func adjustSideLabelWidthWithText(text:String)
     {
         
         
-        
-        
-        
         UIView.animateWithDuration(0.5, delay: 0.0, usingSpringWithDamping: 0.4, initialSpringVelocity: 0, options: .CurveEaseIn, animations: { () -> Void in
-            if
-                !self.text!.isEmpty {
+            
+            if !self.text!.isEmpty {
                     
                     
                     self.sideLabel?.text = text
                     self.sideLabel?.font = self.font
-                    // let fm:CGRect = (self.sideLabel?.frame)!
-                  
-                    
-                    
-                    
-                    
                     self.sideLabel!.transform = CGAffineTransformTranslate(self.sideLabel!.transform,self.sideLabelWidth, 0.0)
-                    
-                    
-                    
+                
             }
+           
             }, completion: nil)
-        
-        
-        
-        
+       
     }
 
 }
